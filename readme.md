@@ -38,3 +38,14 @@ output:
       - timestamp$stringToDate$2006-01-02T15:04:05.000Z
 
 ```
+
+ - Conncetion string : The connection string 
+
+ - Batch_size: number of record to commit each time
+
+ - Query : insert query
+
+ - Columns: Columns in jsonfields tobe inserted
+
+    - Supported converter: stringToInt32, floatToInt32, floatToUInt32, floatToUInt8, stringToDate, unixToDate
+
