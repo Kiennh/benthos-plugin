@@ -16,7 +16,7 @@
 
 ```sql
 CREATE TABLE IF NOT EXISTS 
-    example (hitmiss String, client_ip String, status Int32, timestamp DateTime) 
+    sample(hitmiss String, client_ip String, status Int32, timestamp DateTime) 
     engine=Memory;
 
 ```
