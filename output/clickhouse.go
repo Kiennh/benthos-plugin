@@ -97,7 +97,7 @@ func NewClickHouse(
 
 	var args []*InterpolatedAll
 	for _, v := range conf.Columns {
-		args = append(args, NewInterpolatedString(v))
+		args = append(args, NewInterpolatedAll(v))
 	}
 
 	e := &ClickHouse{
@@ -202,7 +202,7 @@ func (e *ClickHouse) Connected() bool {
 
 	if err := e.connect.Ping(); err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {
-			fmt.Printf("%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
+			fmt.Printf("[%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
 		} else {
 			fmt.Printf("%v \n", err)
 		}

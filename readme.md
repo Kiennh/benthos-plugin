@@ -35,7 +35,7 @@ output:
       - hitmiss
       - client_ip
       - status$floatToInt32
-      - timestamp$stringToDate$2006-01-02T15:04:05.000Z
+      - timestamp$stringToDateOrNow$2006-01-02T15:04:05.000Z
 
 ```
 
@@ -47,5 +47,5 @@ output:
 
  - Columns: Columns in jsonfields tobe inserted
 
-    - Supported converter: stringToInt32, floatToInt32, floatToUInt32, floatToUInt8, stringToDate, unixToDate
+    - Supported converter: stringToInt32, floatToInt32, floatToUInt32, floatToUInt8, stringToDateOrNow, unixToDateOrNow
 

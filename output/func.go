@@ -7,15 +7,17 @@ import (
 )
 
 func stringToInt32(s interface{}, args ...interface{}) interface{} {
-	var out = 0
 	if s, ok := s.(string); ok {
-		out, _ = strconv.Atoi(s)
+		out, err := strconv.Atoi(s)
+		if err == nil {
+			return out
+		}
 	}
 
-	return out
+	return nil
 }
 
-func unixToDate(s interface{}, args ...interface{}) interface{} {
+func unixToDateOrNow(s interface{}, args ...interface{}) interface{} {
 	if i, ok := s.(int64); ok {
 		return time.Unix(i, 0)
 	}
@@ -31,28 +33,28 @@ func floatToInt32(s interface{}, args ...interface{}) interface{} {
 	if i, ok := s.(float64); ok {
 		return int32(i)
 	}
-	return -1
+	return nil
 }
 
 func floatToUInt32(s interface{}, args ...interface{}) interface{} {
 	if i, ok := s.(float64); ok {
 		return uint32(i)
 	}
-	return -1
+	return nil
 }
 
 func floatToUInt8(s interface{}, args ...interface{}) interface{} {
 	if i, ok := s.(float64); ok {
 		return uint8(i)
 	}
-	return -1
+	return nil
 }
 
 func bypass(s interface{}, args ...interface{}) interface{} {
 	return s
 }
 
-func stringToDate(s interface{}, args ...interface{}) interface{} {
+func stringToDateOrNow(s interface{}, args ...interface{}) interface{} {
 	if s, ok := s.(string); ok {
 		var format = "2006-01-02T15:04:05.000Z"
 		if len(args) > 0 {
@@ -67,13 +69,13 @@ func stringToDate(s interface{}, args ...interface{}) interface{} {
 }
 
 var funcvals = map[string]func(s interface{}, args ...interface{}) interface{}{
-	"stringToInt32": stringToInt32,
-	"unixToDate":    unixToDate,
-	"floatToInt32":  floatToInt32,
-	"floatToUInt32": floatToUInt32,
-	"stringToDate":  stringToDate,
-	"floatToUInt8":  floatToUInt8,
-	"bypass":        bypass,
+	"stringToInt32":     stringToInt32,
+	"unixToDateOrNow":   unixToDateOrNow,
+	"floatToInt32":      floatToInt32,
+	"floatToUInt32":     floatToUInt32,
+	"stringToDateOrNow": stringToDateOrNow,
+	"floatToUInt8":      floatToUInt8,
+	"bypass":            bypass,
 }
 
 type InterpolatedAll struct {
@@ -82,7 +84,7 @@ type InterpolatedAll struct {
 	args     []interface{}
 }
 
-func NewInterpolatedString(s string) *InterpolatedAll {
+func NewInterpolatedAll(s string) *InterpolatedAll {
 	splited := strings.Split(s, "$")
 	var jsonPath = s
 	var fval = funcvals["bypass"]
