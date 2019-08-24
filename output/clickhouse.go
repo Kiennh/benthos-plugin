@@ -164,7 +164,6 @@ func (e *ClickHouse) loop() {
 		i++
 
 		if i > e.batchSize || last_commit+e.batchTime < tran.Payload.CreatedAt().Unix() {
-			e.log.Infof("Commit %d records", i-1)
 
 			err := e.tx.Commit()
 			if err != nil {
