@@ -51,8 +51,6 @@ output:
 
  - Conncetion string : The connection string
 
- - Batch_size: number of record to commit each time
-
  - Query : insert query
 
  - Columns: Columns in jsonfields tobe inserted

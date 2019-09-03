@@ -43,16 +43,12 @@ type ClickHouseConfig struct {
 	ConncetionString string   `json:"connection_string" yaml:"connection_string"`
 	Query            string   `json:"query" yaml:"query"`
 	Columns          []string `json:"columns" yaml:"columns"`
-	BatchSize        int      `json:"batch_size" yaml:"batch_size"`
-	BatchTime        int      `json:"batch_time" yaml:"batch_time"`
 }
 
 // NewGibberishConfig creates a config with default values.
 func NewClickHouseConfig() *ClickHouseConfig {
 	return &ClickHouseConfig{
 		ConncetionString: "tcp://127.0.0.1:9000?debug=true",
-		BatchSize:        500,
-		BatchTime:        3000,
 	}
 }
 
@@ -62,8 +58,6 @@ func NewClickHouseConfig() *ClickHouseConfig {
 type ClickHouse struct {
 	conncetionString string
 	query            string
-	batchSize        int
-	batchTime        int64
 
 	// process
 	connect   *sql.DB
@@ -105,8 +99,6 @@ func NewClickHouse(
 		columns:          args,
 		connect:          connect,
 		insertSQL:        conf.Query,
-		batchSize:        conf.BatchSize,
-		batchTime:        int64(conf.BatchTime),
 
 		log:   log,
 		stats: stats,
@@ -125,12 +117,10 @@ func (e *ClickHouse) loop() {
 		close(e.closedChan)
 	}()
 
-	var i = 0
-	var last_commit = time.Now().Unix()
-
 	for {
 		var tran types.Transaction
 		var open bool
+		var err error
 
 		select {
 		case tran, open = <-e.transactionsChan:
@@ -141,49 +131,38 @@ func (e *ClickHouse) loop() {
 			return
 		}
 
-		// todo:
-		tran.Payload.Iter(func(i int, p types.Part) error {
-			jObj, err := p.JSON()
-			if err != nil {
-				return err
-			}
-			obj, ok := jObj.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("not ok")
-			}
-			var data []interface{}
-			data = make([]interface{}, len(e.columns))
-
-			for i, c := range e.columns {
-				data[i] = c.conv(obj)
-			}
-			_, err = e.stmt.Exec(data...)
-			return err
-		})
-
-		i++
-
-		if i > e.batchSize || last_commit+e.batchTime < tran.Payload.CreatedAt().Unix() {
-
-			err := e.tx.Commit()
-			if err != nil {
-				e.log.Errorf("%v", err)
-			}
-			e.stmt.Close()
-
-			i = 0
-			last_commit = tran.Payload.CreatedAt().Unix()
-
-			// re-create  transaction after commit, for the next loop
-			e.tx, err = e.connect.Begin()
-			if err != nil {
-				e.log.Errorf("%v", err)
-			}
-
+		// re-create  transaction after commit, for the next loop
+		e.tx, err = e.connect.Begin()
+		if err == nil {
 			e.stmt, err = e.tx.Prepare(e.insertSQL)
-			if err != nil {
-				e.log.Errorf("%v", err)
+			defer e.stmt.Close()
+			if err == nil {
+				err = tran.Payload.Iter(func(i int, p types.Part) error {
+					jObj, err := p.JSON()
+					if err != nil {
+						return err
+					}
+					obj, ok := jObj.(map[string]interface{})
+					if !ok {
+						return fmt.Errorf("not ok")
+					}
+					var data []interface{}
+					data = make([]interface{}, len(e.columns))
+
+					for i, c := range e.columns {
+						data[i] = c.conv(obj)
+					}
+					_, err = e.stmt.Exec(data...)
+					return err
+				})
+				if err == nil {
+					err = e.tx.Commit()
+				}
 			}
+		}
+
+		if err != nil {
+			e.log.Errorf("%v", err)
 		}
 
 		select {
@@ -214,20 +193,6 @@ func (e *ClickHouse) Connected() bool {
 // Consume starts this output consuming from a transaction channel.
 func (e *ClickHouse) Consume(tChan <-chan types.Transaction) error {
 	e.transactionsChan = tChan
-	// create the first tx
-	tx, err := e.connect.Begin()
-	if err != nil {
-		return err
-	}
-
-	e.log.Infof(e.insertSQL)
-	stmt, err := tx.Prepare(e.insertSQL)
-	if err != nil {
-		return err
-	}
-
-	e.tx = tx
-	e.stmt = stmt
 
 	go e.loop()
 	return nil

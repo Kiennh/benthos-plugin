@@ -43,6 +43,13 @@ func floatToUInt32(s interface{}, args ...interface{}) interface{} {
 	return nil
 }
 
+func floatToUInt64(s interface{}, args ...interface{}) interface{} {
+	if i, ok := s.(float64); ok {
+		return uint64(i)
+	}
+	return nil
+}
+
 func floatToUInt8(s interface{}, args ...interface{}) interface{} {
 	if i, ok := s.(float64); ok {
 		return uint8(i)
@@ -74,6 +81,7 @@ var funcvals = map[string]func(s interface{}, args ...interface{}) interface{}{
 	"floatToInt32":      floatToInt32,
 	"floatToUInt32":     floatToUInt32,
 	"stringToDateOrNow": stringToDateOrNow,
+	"floatToUInt64":     floatToUInt64,
 	"floatToUInt8":      floatToUInt8,
 	"bypass":            bypass,
 }
