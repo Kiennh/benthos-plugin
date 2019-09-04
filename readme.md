@@ -39,7 +39,6 @@ output:
   type: clickhouse
   plugin:
     connection_string: "tcp://localhost:9000"
-    batch_size: 10
     query: "insert into sample(hitmiss, client_ip, status, timestamp) values(?, ?, ?, ?)"
     columns:
       - hitmiss
